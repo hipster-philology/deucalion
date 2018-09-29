@@ -1,0 +1,2 @@
+Flask>=1.0.0
+https://github.com/mikekestemont/pie/archive/dev.zip
