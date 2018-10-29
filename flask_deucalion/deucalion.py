@@ -58,8 +58,8 @@ def api_home():
     return jsonldify({
         "@context": _context,
         "title": "Translation models",
-        "description": "Each model can be called using its URI @id with a POST request"
-                       "where `data` is the input plain/text",
+        "description": "Each model can be called using its URI @id with a POST request "
+                       "where the `text` parameter is the input plain/text",
         "members": [
             model.export(JsonLd)
             for model in Deucalion.models.values()
