@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, url_for, Response
+from flask import Blueprint, jsonify, url_for, Response, request
 from typing import Optional
 from .models import Model
 from .formats import Formats, JsonLd
@@ -72,6 +72,15 @@ def api_model_get(model_id):
     response = Deucalion.get_model(model_id).export(JsonLd)
     response["@context"] = _context
     return jsonldify(response)
+
+
+@Deucalion.route("/model/<model_id>", methods=["POST"])
+def api_model_post(model_id):
+    text = request.form.get("text")
+    if not text:
+        return "Missing data in text parameter", 401, {"Content-Type": "plain/text"}
+    response = Deucalion.get_model(model_id).lemmatize(text)
+    return response, 200, {"Content-Type": "plain/text"}
 
 
 @Deucalion.route("/doc")

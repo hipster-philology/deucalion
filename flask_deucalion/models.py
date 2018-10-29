@@ -49,6 +49,76 @@ class Description(str):
             return str(self)
 
 
+class Corpus:
+    def __init__(self, name, authors, uri, date, licence=None, cite_template=None):
+        self._name = name
+        self._uri = uri
+        self._authors = authors
+        self._date = date
+        self._licence = licence
+        self._cite_template = cite_template or "{authors}, \"{name}\". {date}, Available at {uri}"
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def authors(self):
+        return self._authors
+
+    @property
+    def uri(self):
+        return self._uri
+
+    @property
+    def date(self):
+        return self._date
+
+    @property
+    def template(self):
+        return self._cite_template
+
+    @property
+    def licence(self):
+        return self._licence
+
+    @property
+    def citation(self):
+        return self._cite_template.format(
+            name=self.name,
+            authors=", ".join(self.authors),
+            date=self.date,
+            uri=self.uri
+        )
+
+    def export(self, mimetype):
+        if Formats[mimetype] == JsonLd:
+            o = {
+                "dc:title": self.name,
+                "dc:authors": [author.export(mimetype) for author in self.authors],
+                "dc:date": self.date,
+                "dc:alternative": self.citation
+            }
+            if self.licence:
+                o["dc:licence"] = self.licence
+            return o
+
+
+class Version(Corpus):
+    def __init__(self, corpus, uri=None, date=None):
+        if not uri:
+            uri = corpus.uri
+        if not date:
+            date = corpus.date
+        super(Version, self).__init__(
+            name=corpus.name,
+            cite_template=corpus.template,
+            authors=corpus.authors,
+            uri=uri,
+            date=date
+        )
+
+
 _str_description = Union[str, Description]
 
 
@@ -62,7 +132,7 @@ class Model:
         authors: Optional[List[Author]]= None,
         redirect: Optional["Model"]= None,
         descriptions: Union[None, _str_description, List[_str_description]]= None,
-        sources: List= None
+        corpora: List= None
     ):
         # Minimal settings
         self.identifier = identifier
@@ -89,6 +159,9 @@ class Model:
 
         # Old model that redirects to a new one
         self.redirect = redirect
+        self.corpora = []
+        if corpora:
+            self.corpora = corpora
 
     def export(self, mimetype):
         with current_app.app_context():
@@ -110,7 +183,13 @@ class Model:
                     "dc:description": [
                         description.export(mimetype)
                         for description in self.descriptions
+                    ],
+                    "dc:source": [
+                        corpus.export(mimetype)
+                        for corpus in self.corpora
                     ]
                 }
                 return data
 
+    def lemmatize(self, text):
+        raise NotImplementedError("This model has not implemented texts")
